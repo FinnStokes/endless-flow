@@ -1,10 +1,11 @@
 import itertools
+import math
 import random
 
 import pygame
 
 
-TILESIZE = 64
+TILESIZE = 128
 
 
 class Tile(object):
@@ -16,13 +17,28 @@ class Tile(object):
     VERTICAL = TOP
     HORIZONTAL = LEFT
 
-    def __init__(self, name, img, connectivity, orientations, volume,
+    def __init__(self, name, img, fills, connectivity, orientations, volume,
                  frequency):
         self.name = name
         self.base_img = pygame.image.load(img)
         self.base_img.convert_alpha()
+
+        def get_frames(img):
+            width, height = self.base_img.get_size()
+            img.convert_alpha()
+            xframes = img.get_width() / width
+            yframes = img.get_height() / height
+            return [img.subsurface(pygame.Rect((x * width, y * height),
+                                               (width, height)))
+                    for x in range(xframes) for y in range(yframes)]
+
+        self.base_fills = [get_frames(pygame.image.load(fill))
+                           for fill in fills]
         self.img = [pygame.transform.rotate(self.base_img, 90 * o)
                     for o in (Tile.TOP, Tile.LEFT, Tile.BOTTOM, Tile.RIGHT)]
+        self.fills = [[[pygame.transform.rotate(f, 90 * o) for f in fill]
+                       for o in (Tile.TOP, Tile.LEFT, Tile.BOTTOM, Tile.RIGHT)]
+                      for fill in self.base_fills]
         self.volume = volume
         self.connectivity = frozenset(connectivity)
         self.orientations = orientations
@@ -49,6 +65,7 @@ class Cell(object):
         self.tile = tile
         self.orientation = orientation
         self.fill = [0.0] * 4
+        self.animation = [0.0] * 4
         self.rect = rect
         self.flowing = False
         self.level = level
@@ -58,11 +75,13 @@ class Cell(object):
     def draw(self, surface):
         surface.blit(self.tile.img[self.orientation], self.rect)
         if sum(self.fill) > 0.0:
-            rect = self.rect.copy()
-            rect.height *= sum(self.fill) / self.tile.volume
-            rect.width = 16
-            rect.midtop = self.rect.midtop
-            pygame.draw.rect(surface, (127, 0, 255), rect)
+            fills = self.tile.fills[Tile.TOP][self.orientation]
+            # frames = len(fills)
+            # frame = int(math.floor(frames * (1.0 - sum(self.fill)
+            #                                  / self.tile.volume)))
+            frame = max(0,
+                        len(fills) - 1 - int(math.floor(sum(self.animation))))
+            surface.blit(fills[frame], self.rect)
 
     def flow(self, source, amount):
         if not self.tile.connected(self.orientation, source):
@@ -82,13 +101,13 @@ class Cell(object):
                 overflow_new = 0.0
                 outgoing_new = []
                 for c in outgoing:
-                    source, other = self.level.get_from(self, c)
+                    new_source, other = self.level.get_from(self, c)
                     if other is None:
                         self.level.failed = True
                         overflow_new += overflow / len(outgoing)
                         continue
 
-                    remainder = other.flow(source,
+                    remainder = other.flow(new_source,
                                            overflow / len(outgoing))
                     if remainder > 0.0:
                         overflow_new += remainder
@@ -97,9 +116,11 @@ class Cell(object):
                 overflow = overflow_new
                 outgoing = outgoing_new
             self.flowing = False
+            self.animation[source] += amount - overflow
             return overflow
         else:
             self.fill[source] += amount
+            self.animation[source] += amount
             return 0.0
 
 
@@ -108,7 +129,8 @@ class Level(object):
         self.tileset = [
             Tile(
                 name='straight',
-                img='img/straight.png',
+                img='img/StraightPipe.png',
+                fills=('img/FillAnimateStraightPipe_vertical.png',),
                 connectivity=(Tile.TOP, Tile.BOTTOM),
                 orientations=(Tile.VERTICAL, Tile.HORIZONTAL),
                 volume=128.0,
@@ -116,7 +138,8 @@ class Level(object):
             ),
             Tile(
                 name='corner',
-                img='img/corner.png',
+                img='img/CornerPipe.png',
+                fills=('img/FillAnimateStraightPipe_vertical.png',),
                 connectivity=(Tile.TOP, Tile.LEFT),
                 orientations=(Tile.TOP, Tile.LEFT, Tile.BOTTOM, Tile.RIGHT),
                 volume=128.0,
@@ -124,7 +147,8 @@ class Level(object):
             ),
             Tile(
                 name='tee',
-                img='img/tee.png',
+                img='img/TeePipe.png',
+                fills=('img/FillAnimateStraightPipe_vertical.png',),
                 connectivity=(Tile.TOP, Tile.LEFT, Tile.RIGHT),
                 orientations=(Tile.TOP, Tile.LEFT, Tile.BOTTOM, Tile.RIGHT),
                 volume=128.0,
@@ -132,7 +156,8 @@ class Level(object):
             ),
             Tile(
                 name='end',
-                img='img/end.png',
+                img='img/EndPipe.png',
+                fills=('img/FillAnimateStraightPipe_vertical.png',),
                 connectivity=(Tile.TOP,),
                 orientations=(Tile.TOP, Tile.LEFT, Tile.BOTTOM, Tile.RIGHT),
                 volume=128.0,
@@ -140,7 +165,8 @@ class Level(object):
             ),
             Tile(
                 name='cross',
-                img='img/cross.png',
+                img='img/CrossPipe.png',
+                fills=('img/FillAnimateStraightPipe_vertical.png',),
                 connectivity=(Tile.TOP, Tile.LEFT, Tile.BOTTOM, Tile.RIGHT),
                 orientations=(Tile.TOP,),
                 volume=128.0,
