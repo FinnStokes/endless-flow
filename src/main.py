@@ -10,19 +10,6 @@ import pygame
 import level
 
 
-def print_dir(d):
-    if d == level.Tile.TOP:
-        print("top")
-    elif d == level.Tile.LEFT:
-        print("left")
-    elif d == level.Tile.RIGHT:
-        print("right")
-    elif d == level.Tile.BOTTOM:
-        print("bottom")
-    else:
-        print(d)
-
-
 def main(resolution, fullscreen):
     # Initialise screen
     pygame.init()
@@ -65,7 +52,11 @@ def main(resolution, fullscreen):
                     if show_fps:
                         frame_times = collections.deque(maxlen=50)
 
-        print(l.cells[2][0].flow(level.Tile.TOP, dt * 16))
+        overflow = l.cells[2][0].flow(level.Tile.TOP, dt * 16)
+        print(overflow)
+        if l.failed:
+            print("You lasted {:0.1f} seconds!".format(time))
+            quit = True
 
         screen.blit(background, (0, 0))
         l.draw(screen, (0, 0))

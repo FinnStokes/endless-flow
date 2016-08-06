@@ -65,39 +65,42 @@ class Cell(object):
             pygame.draw.rect(surface, (127, 0, 255), rect)
 
     def flow(self, source, amount):
-        if self.tile.connected(self.orientation, source) and not self.flowing:
-            if sum(self.fill) + amount > self.tile.volume:
-                outgoing = []
-                for c in self.tile.connections(self.orientation):
-                    if self.fill[c] == 0.0:
-                        outgoing.append(c)
-                self.flowing = True
-                overflow = sum(self.fill) + amount - self.tile.volume
-                self.fill[source] += self.tile.volume - sum(self.fill)
-                while overflow > 0.0 and len(outgoing) > 0:
-                    overflow_new = 0.0
-                    outgoing_new = []
-                    for c in outgoing:
-                        source, other = self.level.get_from(self, c)
-                        if other is None:
-                            overflow_new += overflow / len(outgoing)
-                            continue
-
-                        remainder = other.flow(source,
-                                               overflow / len(outgoing))
-                        if remainder > 0.0:
-                            overflow_new += remainder
-                        else:
-                            outgoing_new.append(c)
-                    overflow = overflow_new
-                    outgoing = outgoing_new
-                self.flowing = False
-                return overflow
-            else:
-                self.fill[source] += amount
-                return 0.0
-        else:
+        if not self.tile.connected(self.orientation, source):
+            self.level.failed = True
             return amount
+        if self.flowing:
+            return amount
+        if sum(self.fill) + amount > self.tile.volume:
+            outgoing = []
+            for c in self.tile.connections(self.orientation):
+                if self.fill[c] == 0.0:
+                    outgoing.append(c)
+            self.flowing = True
+            overflow = sum(self.fill) + amount - self.tile.volume
+            self.fill[source] += self.tile.volume - sum(self.fill)
+            while overflow > 0.0 and len(outgoing) > 0:
+                overflow_new = 0.0
+                outgoing_new = []
+                for c in outgoing:
+                    source, other = self.level.get_from(self, c)
+                    if other is None:
+                        self.level.failed = True
+                        overflow_new += overflow / len(outgoing)
+                        continue
+
+                    remainder = other.flow(source,
+                                           overflow / len(outgoing))
+                    if remainder > 0.0:
+                        overflow_new += remainder
+                    else:
+                        outgoing_new.append(c)
+                overflow = overflow_new
+                outgoing = outgoing_new
+            self.flowing = False
+            return overflow
+        else:
+            self.fill[source] += amount
+            return 0.0
 
 
 class Level(object):
@@ -158,6 +161,7 @@ class Level(object):
                        for y in range(height)] for x in range(width)]
         self.width = width
         self.height = height
+        self.failed = False
 
     def random_tile(self):
         total = sum(t.frequency for t in self.tileset)
