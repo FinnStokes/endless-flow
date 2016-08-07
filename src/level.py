@@ -64,6 +64,7 @@ class Cell(object):
         self.level = level
         self.x = x
         self.y = y
+        self.dirty = True
 
     def connected(self, direction):
         return self.tile.connected(self.orientation, direction)
@@ -76,6 +77,7 @@ class Cell(object):
                 fills = self.tile.fills[source][self.orientation]
                 frame = max(0, len(fills) - 1 - int(math.floor(fill)))
                 surface.blit(fills[frame], self.rect)
+            self.dirty = False
 
     def flow(self, source, amount):
         if not self.connected(source):
@@ -110,11 +112,16 @@ class Cell(object):
                 overflow = overflow_new
                 outgoing = outgoing_new
             self.flowing = False
+            src = (source - self.orientation) % 4
+            anim_len = len(self.tile.fills[src][self.orientation])
+            if self.animation[source] <= anim_len and amount - overflow > 0.0:
+                self.dirty = True
             self.animation[source] += amount - overflow
             return overflow
         else:
             self.fill[source] += amount
             self.animation[source] += amount
+            self.dirty = True
             return 0.0
 
 
@@ -210,6 +217,7 @@ class Level(object):
                                       (width * TILESIZE, height * TILESIZE))
         self.rect = self.screenrect.copy()
         self.mouseselect = None
+        self.mouseselectold = None
         self.mouseframe = resources.load_png('img/SelectorPanel.png')
 
     def random_tile(self):
@@ -221,8 +229,15 @@ class Level(object):
                 return t
 
     def draw(self, surface):
+        if self.mouseselectold != self.mouseselect:
+            if self.mouseselectold is not None:
+                self.mouseselectold.dirty = True
+            if self.mouseselect is not None:
+                self.mouseselect.dirty = True
+            self.mouseselectold = self.mouseselect
         for c in itertools.chain(*self.cells):
-            c.draw(self.surf)
+            if c.dirty:
+                c.draw(self.surf)
         if self.mouseselect is not None:
             self.surf.blit(self.mouseframe, self.mouseselect.rect)
         surface.blit(self.surf, self.screenrect, self.rect)
@@ -238,6 +253,8 @@ class Level(object):
                     if c.rect.collidepoint(pos) and max(c.fill) == 0.0:
                         if self.mouseselect is None:
                             self.mouseselect = c
+                        elif self.mouseselect == c:
+                            self.mouseselect = None
                         else:
                             if max(self.mouseselect.fill) == 0.0:
                                 x = self.mouseselect.x
@@ -250,12 +267,14 @@ class Level(object):
                                 )
                                 self.mouseselect.x = c.x
                                 self.mouseselect.y = c.y
+                                self.mouseselect.dirty = True
                                 c.rect.topleft = (
                                     x * TILESIZE,
                                     y * TILESIZE,
                                 )
                                 c.x = x
                                 c.y = y
+                                c.dirty = True
                             self.mouseselect = None
                         break
         elif button == 3:
