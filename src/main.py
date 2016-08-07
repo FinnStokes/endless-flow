@@ -29,6 +29,7 @@ def main(resolution, fullscreen):
     background.fill((255, 255, 255))
 
     quit = False
+    failed = False
 
     clock = pygame.time.Clock()
     time = 0.0
@@ -40,7 +41,6 @@ def main(resolution, fullscreen):
     while not quit:
         dt = clock.tick(200) / 1000.0
         frames += 1
-        time += dt
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -53,12 +53,15 @@ def main(resolution, fullscreen):
                     if show_fps:
                         frame_times = collections.deque(maxlen=50)
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                l.click(event.pos, event.button)
+                if not failed:
+                    l.click(event.pos, event.button)
 
-        l.update(dt)
-        if l.failed:
-            print("You lasted {:0.1f} seconds!".format(time))
-            quit = True
+        if not failed:
+            time += dt
+            l.update(dt)
+            if l.failed:
+                print("You lasted {:0.1f} seconds!".format(time))
+                failed = True
 
         screen.blit(background, (0, 0))
         l.draw(screen)
