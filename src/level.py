@@ -192,20 +192,21 @@ class Level(object):
             ),
         ]
 
-        self.surf = pygame.Surface((width * TILESIZE, height * TILESIZE),
+        self.surf = pygame.Surface((width * TILESIZE, 2 * height * TILESIZE),
                                    flags=pygame.SRCALPHA)
 
         tiles = [[self.random_tile()
-                  for y in range(height)] for x in range(width)]
-        self.cells = [[Cell(tiles[x][y],
-                            random.choice(tiles[x][y].orientations),
+                  for x in range(width)] for y in range(2 * height)]
+        self.cells = [[Cell(tiles[y][x],
+                            random.choice(tiles[y][x].orientations),
                             pygame.Rect((x * TILESIZE, y * TILESIZE),
                                         (TILESIZE, TILESIZE)),
                             self, x, y)
-                       for y in range(height)] for x in range(width)]
-        while not self.cells[2][0].connected(Tile.TOP):
+                       for x in range(width)] for y in range(2 * height)]
+        while (not self.cells[0][2].connected(Tile.TOP)
+                or len(self.cells[0][2].tile.connectivity) <= 1):
             tile = self.random_tile()
-            self.cells[2][0] = Cell(tile,
+            self.cells[0][2] = Cell(tile,
                                     random.choice(tile.orientations),
                                     pygame.Rect((2 * TILESIZE, 0 * TILESIZE),
                                                 (TILESIZE, TILESIZE)),
@@ -216,9 +217,12 @@ class Level(object):
         self.screenrect = pygame.Rect((0, 0),
                                       (width * TILESIZE, height * TILESIZE))
         self.rect = self.screenrect.copy()
+        self.scroll = 0.0
         self.mouseselect = None
         self.mouseselectold = None
         self.mouseframe = resources.load_png('img/SelectorPanel.png')
+        self.rate = 0.0
+        self.growth = 1.0
 
     def random_tile(self):
         total = sum(t.frequency for t in self.tileset)
@@ -259,8 +263,8 @@ class Level(object):
                             if max(self.mouseselect.fill) == 0.0:
                                 x = self.mouseselect.x
                                 y = self.mouseselect.y
-                                self.cells[x][y] = c
-                                self.cells[c.x][c.y] = self.mouseselect
+                                self.cells[y][x] = c
+                                self.cells[c.y][c.x] = self.mouseselect
                                 self.mouseselect.rect.topleft = (
                                     c.x * TILESIZE,
                                     c.y * TILESIZE,
@@ -281,7 +285,11 @@ class Level(object):
             self.mouseselect = None
 
     def update(self, dt):
-        if self.cells[2][0].flow(Tile.TOP, dt * 16) > 0.0:
+        flow = (self.rate + dt * self.growth / 2.0) * dt
+        self.scroll += dt * (self.rate + dt * self.growth / 2.0) / 4.0
+        self.rect.top = self.scroll
+        self.rate += self.growth * dt
+        if self.cells[0][2].flow(Tile.TOP, flow) > 0.0:
             self.failed = True
         if self.mouseselect is not None and max(self.mouseselect.fill) > 0.0:
             self.mouseselect = None
@@ -289,21 +297,21 @@ class Level(object):
     def get_from(self, cell, direction):
         if direction == Tile.TOP:
             if cell.y - 1 >= 0:
-                return Tile.BOTTOM, self.cells[cell.x][cell.y - 1]
+                return Tile.BOTTOM, self.cells[cell.y - 1][cell.x]
             else:
                 return None, None
         elif direction == Tile.BOTTOM:
             if cell.y + 1 < self.height:
-                return Tile.TOP, self.cells[cell.x][cell.y + 1]
+                return Tile.TOP, self.cells[cell.y + 1][cell.x]
             else:
                 return None, None
         elif direction == Tile.LEFT:
             if cell.x - 1 >= 0:
-                return Tile.RIGHT, self.cells[cell.x - 1][cell.y]
+                return Tile.RIGHT, self.cells[cell.y][cell.x - 1]
             else:
                 return None, None
         elif direction == Tile.RIGHT:
             if cell.x + 1 < self.width:
-                return Tile.LEFT, self.cells[cell.x + 1][cell.y]
+                return Tile.LEFT, self.cells[cell.y][cell.x + 1]
             else:
                 return None, None
