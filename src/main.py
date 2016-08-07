@@ -8,6 +8,7 @@ import collections
 import pygame
 
 import level
+import resources
 
 
 def main(resolution, fullscreen):
@@ -52,7 +53,7 @@ def main(resolution, fullscreen):
                     if show_fps:
                         frame_times = collections.deque(maxlen=50)
 
-        overflow = l.cells[2][0].flow(level.Tile.TOP, dt * 16)
+        overflow = l.cells[2][0].flow(level.Tile.TOP, dt * 64)
         print(overflow)
         if l.failed:
             print("You lasted {:0.1f} seconds!".format(time))
@@ -71,6 +72,9 @@ def main(resolution, fullscreen):
 
     print("Rendered " + str(frames) + " frames in " + str(time)
           + " seconds (" + str(frames / time) + " FPS)")
+    print("Resource cache: {} hits and {} misses".format(
+        resources.cache.hits, resources.cache.misses,
+    ))
 
 
 def resolution(raw):
