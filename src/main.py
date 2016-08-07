@@ -36,7 +36,7 @@ def main(resolution, fullscreen):
     frames = 0
     show_fps = False
 
-    l = level.Level(5, 5)
+    l = level.Level(6, 5)
 
     while not quit:
         dt = clock.tick(200) / 1000.0

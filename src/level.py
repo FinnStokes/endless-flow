@@ -239,7 +239,7 @@ class Level(object):
             if self.mouseselect is not None:
                 self.mouseselect.dirty = True
             self.mouseselectold = self.mouseselect
-        for c in itertools.chain(*self.cells):
+        for c in itertools.chain(*self.cells[-2 * self.height:]):
             if c.dirty:
                 c.draw(self.surf)
         if self.mouseselect is not None:
@@ -263,19 +263,14 @@ class Level(object):
                             if max(self.mouseselect.fill) == 0.0:
                                 x = self.mouseselect.x
                                 y = self.mouseselect.y
+                                rect = self.mouseselect.rect
                                 self.cells[y][x] = c
                                 self.cells[c.y][c.x] = self.mouseselect
-                                self.mouseselect.rect.topleft = (
-                                    c.x * TILESIZE,
-                                    c.y * TILESIZE,
-                                )
+                                self.mouseselect.rect = c.rect
                                 self.mouseselect.x = c.x
                                 self.mouseselect.y = c.y
                                 self.mouseselect.dirty = True
-                                c.rect.topleft = (
-                                    x * TILESIZE,
-                                    y * TILESIZE,
-                                )
+                                c.rect = rect
                                 c.x = x
                                 c.y = y
                                 c.dirty = True
@@ -287,10 +282,28 @@ class Level(object):
     def update(self, dt):
         flow = (self.rate + dt * self.growth / 2.0) * dt
         self.scroll += dt * (self.rate + dt * self.growth / 2.0) / 4.0
+        if self.scroll > self.rect.height:
+            for row in self.cells[-self.height:]:
+                for cell in row:
+                    cell.rect.top -= self.height * TILESIZE
+                    cell.dirty = True
+            tiles = [[self.random_tile()
+                      for x in range(self.width)]
+                     for dy in range(self.height)]
+            self.cells = (self.cells +
+                          [[Cell(tiles[dy][x],
+                                 random.choice(tiles[dy][x].orientations),
+                                 pygame.Rect((x * TILESIZE,
+                                              (self.height + dy) * TILESIZE),
+                                             (TILESIZE, TILESIZE)),
+                                 self, x, len(self.cells) + dy)
+                            for x in range(self.width)]
+                           for dy in range(self.height)])
+            self.scroll -= self.rect.height
         self.rect.top = self.scroll
         self.rate += self.growth * dt
         if self.cells[0][2].flow(Tile.TOP, flow) > 0.0:
-            self.failed = True
+           self.failed = True
         if self.mouseselect is not None and max(self.mouseselect.fill) > 0.0:
             self.mouseselect = None
 
@@ -301,7 +314,7 @@ class Level(object):
             else:
                 return None, None
         elif direction == Tile.BOTTOM:
-            if cell.y + 1 < self.height:
+            if cell.y + 1 < len(self.cells):
                 return Tile.TOP, self.cells[cell.y + 1][cell.x]
             else:
                 return None, None
