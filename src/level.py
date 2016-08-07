@@ -210,9 +210,9 @@ class Level(object):
             self.cells[0][x] = Cell(
                 tile,
                 random.choice(tile.orientations),
-                pygame.Rect((2 * TILESIZE, 0 * TILESIZE),
+                pygame.Rect((x * TILESIZE, 0 * TILESIZE),
                             (TILESIZE, TILESIZE)),
-                self, 2, 0)
+                self, x, 0)
         self.width = width
         self.height = height
         self.failed = False
@@ -224,7 +224,7 @@ class Level(object):
         self.mouseselectold = None
         self.mouseframe = resources.load_png('img/SelectorPanel.png')
         self.rate = 0.0
-        self.growth = 1.0
+        self.growth = 0.5
 
     def random_tile(self):
         total = sum(t.frequency for t in self.tileset)
@@ -285,7 +285,8 @@ class Level(object):
 
     def update(self, dt):
         flow = (self.rate + dt * self.growth / 2.0) * dt
-        self.scroll += dt * (self.rate + dt * self.growth / 2.0) / 4.0
+        if self.rate > 16:
+            self.scroll += dt * (self.rate + dt * self.growth / 2.0) / 4.0
         if self.scroll > self.rect.height:
             for row in self.cells[-self.height:]:
                 for cell in row:

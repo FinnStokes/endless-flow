@@ -39,6 +39,8 @@ def main(resolution, fullscreen):
     l = level.Level(7, 5)
     l.screenrect.center = screenRect.center
 
+    l.update(5.0)
+
     while not quit:
         dt = clock.tick(200) / 1000.0
         frames += 1
@@ -53,6 +55,12 @@ def main(resolution, fullscreen):
                     show_fps = not show_fps
                     if show_fps:
                         frame_times = collections.deque(maxlen=50)
+                elif event.key == pygame.K_r:
+                    l = level.Level(7, 5)
+                    l.screenrect.center = screenRect.center
+                    l.update(5.0)
+                    time = 0
+                    failed = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if not failed:
                     l.click(event.pos, event.button)
