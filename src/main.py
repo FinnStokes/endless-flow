@@ -37,6 +37,7 @@ def main(resolution, fullscreen):
     show_fps = False
 
     l = level.Level(7, 5)
+    l.screenrect.center = screenRect.center
 
     while not quit:
         dt = clock.tick(200) / 1000.0
@@ -72,6 +73,10 @@ def main(resolution, fullscreen):
             fontrect = widget.get_rect()
             fontrect.topright = (screenRect.right - 10, screenRect.top + 10)
             screen.blit(widget, fontrect.topleft)
+        timeSurf = font.render("{:0.1f}s".format(time), True, (0, 0, 0))
+        fontrect = timeSurf.get_rect()
+        fontrect.midbottom = (l.screenrect.centerx, l.screenrect.top - 10)
+        screen.blit(timeSurf, fontrect.topleft)
         pygame.display.flip()
 
     print("Rendered " + str(frames) + " frames in " + str(time)

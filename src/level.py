@@ -203,14 +203,16 @@ class Level(object):
                                         (TILESIZE, TILESIZE)),
                             self, x, y)
                        for x in range(width)] for y in range(2 * height)]
-        while (not self.cells[0][2].connected(Tile.TOP)
-                or len(self.cells[0][2].tile.connectivity) <= 1):
+        x = (width - 1) / 2
+        while (not self.cells[0][x].connected(Tile.TOP)
+               or len(self.cells[0][x].tile.connectivity) <= 1):
             tile = self.random_tile()
-            self.cells[0][2] = Cell(tile,
-                                    random.choice(tile.orientations),
-                                    pygame.Rect((2 * TILESIZE, 0 * TILESIZE),
-                                                (TILESIZE, TILESIZE)),
-                                    self, 2, 0)
+            self.cells[0][x] = Cell(
+                tile,
+                random.choice(tile.orientations),
+                pygame.Rect((2 * TILESIZE, 0 * TILESIZE),
+                            (TILESIZE, TILESIZE)),
+                self, 2, 0)
         self.width = width
         self.height = height
         self.failed = False
@@ -304,7 +306,7 @@ class Level(object):
             self.scroll -= self.rect.height
         self.rect.top = self.scroll
         self.rate += self.growth * dt
-        if self.cells[0][2].flow(Tile.TOP, flow) > 0.0:
+        if self.cells[0][(self.width - 1) / 2].flow(Tile.TOP, flow) > 0.0:
             self.failed = True
         if self.mouseselect is not None and max(self.mouseselect.fill) > 0.0:
             self.mouseselect = None
