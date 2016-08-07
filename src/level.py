@@ -156,13 +156,13 @@ class Level(object):
                 name='tee',
                 img='img/TeePipe.png',
                 fills={
-                    Tile.TOP: 'img/FillAnimateStraightPipe.png',
+                    Tile.TOP: 'img/FillAnimateTeePipeFromTop.png',
                     Tile.LEFT: 'img/FillAnimateStraightPipe.png',
                     Tile.RIGHT: 'img/FillAnimateStraightPipe.png',
                 },
                 connectivity=(Tile.TOP, Tile.LEFT, Tile.RIGHT),
                 orientations=(Tile.TOP, Tile.LEFT, Tile.BOTTOM, Tile.RIGHT),
-                volume=128.0,
+                volume=115.0,
                 frequency=0.25,
             ),
             Tile(
@@ -254,7 +254,9 @@ class Level(object):
                     zip(pos, self.screenrect.topleft, self.rect.topleft)
                 )
                 for c in itertools.chain(*self.cells):
-                    if c.rect.collidepoint(pos) and max(c.fill) == 0.0:
+                    if (c.rect.collidepoint(pos)
+                            and len(self.cells) - c.y <= 2 * self.height
+                            and max(c.fill) == 0.0):
                         if self.mouseselect is None:
                             self.mouseselect = c
                         elif self.mouseselect == c:
@@ -303,7 +305,7 @@ class Level(object):
         self.rect.top = self.scroll
         self.rate += self.growth * dt
         if self.cells[0][2].flow(Tile.TOP, flow) > 0.0:
-           self.failed = True
+            self.failed = True
         if self.mouseselect is not None and max(self.mouseselect.fill) > 0.0:
             self.mouseselect = None
 
