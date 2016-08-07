@@ -206,6 +206,11 @@ class Level(object):
         self.width = width
         self.height = height
         self.failed = False
+        self.screenrect = pygame.Rect((0, 0),
+                                      (width * TILESIZE, height * TILESIZE))
+        self.rect = self.screenrect.copy()
+        self.mouseselect = None
+        self.mouseframe = resources.load_png('img/SelectorPanel.png')
 
     def random_tile(self):
         total = sum(t.frequency for t in self.tileset)
@@ -215,10 +220,52 @@ class Level(object):
             if r <= 0:
                 return t
 
-    def draw(self, surface, rect):
+    def draw(self, surface):
         for c in itertools.chain(*self.cells):
             c.draw(self.surf)
-        surface.blit(self.surf, rect)
+        if self.mouseselect is not None:
+            self.surf.blit(self.mouseframe, self.mouseselect.rect)
+        surface.blit(self.surf, self.screenrect, self.rect)
+
+    def click(self, pos, button):
+        if button == 1:
+            if self.screenrect.collidepoint(pos):
+                pos = tuple(
+                    p - o + r for p, o, r in
+                    zip(pos, self.screenrect.topleft, self.rect.topleft)
+                )
+                for c in itertools.chain(*self.cells):
+                    if c.rect.collidepoint(pos) and max(c.fill) == 0.0:
+                        if self.mouseselect is None:
+                            self.mouseselect = c
+                        else:
+                            if max(self.mouseselect.fill) == 0.0:
+                                x = self.mouseselect.x
+                                y = self.mouseselect.y
+                                self.cells[x][y] = c
+                                self.cells[c.x][c.y] = self.mouseselect
+                                self.mouseselect.rect.topleft = (
+                                    c.x * TILESIZE,
+                                    c.y * TILESIZE,
+                                )
+                                self.mouseselect.x = c.x
+                                self.mouseselect.y = c.y
+                                c.rect.topleft = (
+                                    x * TILESIZE,
+                                    y * TILESIZE,
+                                )
+                                c.x = x
+                                c.y = y
+                            self.mouseselect = None
+                        break
+        elif button == 3:
+            self.mouseselect = None
+
+    def update(self, dt):
+        if self.cells[2][0].flow(Tile.TOP, dt * 16) > 0.0:
+            self.failed = True
+        if self.mouseselect is not None and max(self.mouseselect.fill) > 0.0:
+            self.mouseselect = None
 
     def get_from(self, cell, direction):
         if direction == Tile.TOP:

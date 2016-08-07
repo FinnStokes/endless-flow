@@ -52,15 +52,16 @@ def main(resolution, fullscreen):
                     show_fps = not show_fps
                     if show_fps:
                         frame_times = collections.deque(maxlen=50)
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                l.click(event.pos, event.button)
 
-        overflow = l.cells[2][0].flow(level.Tile.TOP, dt * 64)
-        print(overflow)
+        l.update(dt)
         if l.failed:
             print("You lasted {:0.1f} seconds!".format(time))
             quit = True
 
         screen.blit(background, (0, 0))
-        l.draw(screen, (0, 0))
+        l.draw(screen)
         if (show_fps):
             frame_times.append(dt)
             fps = len(frame_times) / sum(frame_times)
