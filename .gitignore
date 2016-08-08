@@ -1,5 +1,6 @@
 .*.swp
 *~
 *.pyc
-*.prof
-screenshot*.png
+/*.prof
+/screenshot*.png
+/dist/
