@@ -1,7 +1,8 @@
 Endless Flow
 ============
 
-An endless pipe building game.
+An endless pipe building puzzle game. Created for
+[Adelaide Game Jam 5](http://www.jamalaide.org.au/jams/agj-5/) "Flow".
 
 Controls 
 ---------
