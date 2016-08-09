@@ -1,15 +1,3 @@
-# This will create a dist directory containing the executable file, all the data
-# directories. All Libraries will be bundled in executable file.
-#
-# Run the build process by entering 'pygame2exe.py' or
-# 'python pygame2exe.py' in a console prompt.
-#
-# To build exe, python, pygame, and py2exe have to be installed. After
-# building exe none of this libraries are needed.
-#Please Note have a backup file in a different directory as if it crashes you 
-#will loose it all!(I lost 6 months of work because I did not do this)
- 
- 
 try:
     from distutils.core import setup
     import py2exe, pygame
@@ -48,24 +36,27 @@ class BuildExe:
         self.project_name = "Endless Flow"
  
         #Project url
-        self.project_url = "http://www.jamalaide.org.au/jams/agj-5/endless-flow"
+        self.project_url = "https://github.com/FinnStokes/endless-flow"
  
         #Version of program
         self.project_version = "0.1"
  
         #Auhor of program
-        self.author_name = "Finn Stokes & Sophie Hollitt"
+        self.author_name = "Finn Stokes and Sophie Hollitt"
         self.author_email = "finn.stokes@gmail.com"
-        self.copyright = "Copyright (c) 2016 Finn Stokes & Sophie Hollitt."
+        self.copyright = "Copyright (c) 2016 Finn Stokes and Sophie Hollitt."
  
         #Description
         self.project_description = "An endless pipe building puzzle game."
  
         #Icon file (None will use pygame default icon)
-        self.icon_file = "img/icon.png"
+        self.icon_file = "img/icon.ico"
  
         #Extra files/dirs copied to game
-        self.extra_datas = ["img/CornerPipe.png", "img/CrossPipe.png", "img/EndPipe.png", "img/StraightPipe.png", "img/TeePipe.png", "img/SelectorPanel.png", "img/FillAnimateCornerPipeTopToLeft.png", "img/FillAnimateCornerPipeTopToRight.png", "img/FillAnimateCrossPipeIntoAll.png", "img/FillAnimateEndPipe.png", "img/FillAnimateStraightPipe.png", "img/FillAnimateTeePipeFromTop.png", "img/FillAnimateTeePipeTopIntoLeft.png", "img/FillAnimateTeePipeTopIntoRight.png"]
+        self.extra_datas = [("img", ["img/CornerPipe.png", "img/CrossPipe.png", "img/EndPipe.png", "img/StraightPipe.png", "img/TeePipe.png", "img/SelectorPanel.png",
+                                     "img/FillAnimateCornerPipeTopToLeft.png", "img/FillAnimateCornerPipeTopToRight.png", "img/FillAnimateCrossPipeIntoAll.png",
+                                     "img/FillAnimateEndPipe.png", "img/FillAnimateStraightPipe.png", "img/FillAnimateTeePipeFromTop.png",
+                                     "img/FillAnimateTeePipeTopIntoLeft.png", "img/FillAnimateTeePipeTopIntoRight.png"])]
  
         #Extra/excludes python modules
         self.extra_modules = []
@@ -126,12 +117,12 @@ class BuildExe:
             self.icon_file = os.path.join(path, 'pygame.ico')
  
         #List all data files to add
-        extra_datas = []
-        for data in self.extra_datas:
-            if os.path.isdir(data):
-                extra_datas.extend(self.find_data_files(data, '*'))
-            else:
-                extra_datas.append(('.', [data]))
+        extra_datas = self.extra_datas
+        #for data in self.extra_datas:
+        #    if os.path.isdir(data):
+        #        extra_datas.extend(self.find_data_files(data, '*'))
+        #    else:
+        #        extra_datas.append(('.', [data]))
         
         setup(
             cmdclass = {'py2exe': pygame2exe},
@@ -141,10 +132,11 @@ class BuildExe:
             url = self.project_url,
             author = self.author_name,
             author_email = self.author_email,
-            license = self.license,
+            package_dir = {'': 'src'},
+            packages = [''],
  
             # targets to build
-            windows = [{
+            console = [{
                 'script': self.script,
                 'icon_resources': [(0, self.icon_file)],
                 'copyright': self.copyright
